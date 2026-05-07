@@ -1,39 +1,28 @@
 package config
 
 import (
-	"fmt"
-	"os"
-	"time"
-
 	"github.com/joho/godotenv"
-	"github.com/yousefggg/common-lib/pkg/logger" 
+	"github.com/yousefggg/common-lib/pkg/config"
+	"github.com/yousefggg/common-lib/pkg/logger"
 )
 
 type Config struct {
-	HTTPPort  string
-	Env       string
-	DBURL     string
-	JWTSecret string
-	JWTTTL    time.Duration
+	*config.Config
 }
 
 func LoadConfig() *Config {
+
 	if err := godotenv.Load(); err != nil {
-		logger.Info("info: .env file not found, using system environment variables")
+		logger.Info(".env file not found, using system environment variables")
 	}
 
-	ttlStr := os.Getenv("JWT_TTL")
-	ttl, err := time.ParseDuration(ttlStr)
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		logger.Warn(fmt.Sprintf("failed to parse JWT_TTL '%s', falling back to default 24h", ttlStr), "error", err)
-		ttl = time.Hour * 24
+		logger.Error("failed to load config", "error", err)
+		panic(err) 
 	}
 
 	return &Config{
-		HTTPPort:  os.Getenv("HTTP_PORT"),
-		Env:       os.Getenv("ENV"),
-		DBURL:     os.ExpandEnv(os.Getenv("DB_URL")), 
-		JWTSecret: os.Getenv("JWT_SECRET"),
-		JWTTTL:    ttl,
+		Config: cfg,
 	}
 }

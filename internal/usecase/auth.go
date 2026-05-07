@@ -2,11 +2,10 @@ package usecase
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/yousefggg/auth-service/internal/domain"
+	"github.com/yousefggg/common-lib/pkg/errors"
 	"github.com/yousefggg/common-lib/pkg/jwt"
 	"github.com/yousefggg/common-lib/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
@@ -27,29 +26,29 @@ func NewAuthInteractor(repo domain.UserRepository, tm *jwt.TokenManager) *AuthIn
 func (a *AuthInteractor) Register(ctx context.Context, email, password, role string) error {
 	if !strings.Contains(email, "@") || len(email) < 5 {
 		logger.Warn("Registration failed: invalid email format", "email", email)
-		return errors.New("invalid email format")
+		return errors.NewErr("AUTH_INVALID_EMAIL", "invalid email format", nil)
 	}
 
 	if len(password) < 8 {
 		logger.Warn("Registration failed: password too short", "email", email)
-		return errors.New("password must be at least 8 characters long")
+		return errors.NewErr("AUTH_SHORT_PASSWORD", "password must be at least 8 characters", nil)
 	}
 
-	if role != "user" && role != "admin" {
+	if role != domain.RoleUser && role != domain.RoleAdmin {
 		logger.Warn("Registration failed: invalid role", "role", role)
-		return errors.New("invalid role")
+		return errors.NewErr("AUTH_INVALID_ROLE", "unsupported role", nil)
 	}
 
 	existingUser, _ := a.repo.GetByEmail(ctx, email)
 	if existingUser != nil {
 		logger.Warn("Registration failed: user already exists", "email", email)
-		return errors.New("user already exists")
+		return errors.NewErr("AUTH_USER_EXISTS", "user already exists", nil)
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		logger.Error("Failed to hash password during registration", "error", err)
-		return fmt.Errorf("hash password: %w", err)
+		logger.Error("Failed to hash password", "error", err)
+		return errors.NewErr("INTERNAL_ERROR", "failed to process security data", err)
 	}
 
 	user := &domain.User{
@@ -59,7 +58,7 @@ func (a *AuthInteractor) Register(ctx context.Context, email, password, role str
 	}
 
 	if err := a.repo.Create(ctx, user); err != nil {
-		logger.Error("Failed to create user in database", "email", email, "error", err)
+		logger.Error("Failed to create user", "email", email, "error", err)
 		return err
 	}
 
@@ -71,18 +70,18 @@ func (a *AuthInteractor) Login(ctx context.Context, email, password string) (str
 	user, err := a.repo.GetByEmail(ctx, email)
 	if err != nil {
 		logger.Warn("Login failed: user not found", "email", email)
-		return "", errors.New("invalid credentials")
+		return "", errors.NewErr("AUTH_FAILED", "invalid credentials", nil)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		logger.Warn("Login failed: wrong password", "email", email)
-		return "", errors.New("invalid credentials")
+		return "", errors.NewErr("AUTH_FAILED", "invalid credentials", nil)
 	}
 
 	token, err := a.tokenManager.GenerateToken(user.ID, user.Role)
 	if err != nil {
-		logger.Error("Failed to generate JWT token", "user_id", user.ID, "error", err)
-		return "", fmt.Errorf("generate token: %w", err)
+		logger.Error("Failed to generate JWT", "user_id", user.ID, "error", err)
+		return "", errors.NewErr("INTERNAL_ERROR", "failed to create session", err)
 	}
 
 	logger.Info("User logged in successfully", "user_id", user.ID, "email", email)
