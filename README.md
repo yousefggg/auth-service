@@ -1,61 +1,82 @@
 # Mountain Tour Auth Service
-Сервис аутентификации и управления пользователями. Является частью экосистемы Mountain Tour, отвечает за безопасность, регистрацию и выдачу прав доступа.
-## Технологический стек и зависимости
-Для работы проекта использованы следующие ключевые библиотеки:
 
-**Веб-фреймворк/Роутинг:** Standard net/http (для чистоты архитектуры).
+[![Go Report Card](https://goreportcard.com)](https://goreportcard.com)
+![License](https://shields.io)
 
-**База данных:** PostgreSQL + драйвер pgx.
+Сервис аутентификации и управления пользователями. Является ядром экосистемы **Mountain Tour**, отвечая за безопасность, регистрацию и разграничение прав доступа.
 
-**Безопасность:** golang.org/x/crypto/bcrypt (хеширование) и golang-jwt/jwt (токены).
+## 🚀 Технологический стек
 
-**Логирование и Ошибки:** Собственная библиотека github.com/yousefggg/common-lib.
+*   **Language:** Go (Standard `net/http` для чистоты архитектуры)
+*   **Database:** PostgreSQL + `pgx`
+*   **Security:** `bcrypt` (хеширование), `golang-jwt` (токены)
+*   **Logging:** [common-lib](https://github.com)
+*   **Testing:** `testify`, `mockery`
 
-**Тестирование:** testify и mockery.
-### Установка зависимостей
-```go get github.com/google/uuid
-go get github.com/stretchr/testify/assert
-go get github.com/stretchr/testify/mock
-go get golang.org/x/crypto/bcrypt
-go mod tidy```
+## 🏗 Архитектура
 
-## Архитектура и структура модулей
-Проект построен по принципам Clean Architecture (Чистая архитектура). Это обеспечивает независимость бизнес-логики от внешних факторов (БД или HTTP-фреймворка).
+Проект реализован согласно принципам **Clean Architecture**. Это обеспечивает независимость бизнес-логики от внешних фреймворков и баз данных.
 
 ### Слои приложения:
-1.Domain: Описывает структуры данных (User) и интерфейсы репозиториев. Не зависит ни от чего.
+- **Domain**: Сущности (`User`) и интерфейсы репозиториев.
+- **Usecase**: Бизнес-логика (регистрация, вход, валидация).
+- **Repository**: Реализация доступа к PostgreSQL.
+- **Delivery (Handler)**: HTTP-слой, обработка запросов и JSON.
 
-2.Usecase (Interactors): Сердце приложения. Содержит бизнес-правила (валидация, логика регистрации, логика входа).
+---
 
-3.Repository: Слой доступа к данным. Реализует интерфейсы из Domain для работы с PostgreSQL.
+## 🛠 Установка и запуск
 
-4.Delivery (Handler): Внешний слой. Принимает HTTP-запросы, парсит JSON и передает управление в Usecase.
+### 1. Подготовка окружения
+Создайте файл `.env` в корне проекта и укажите настройки:
+```env
+DB_URL=postgres://user:password@localhost:5432/mountain_tour
+JWT_SECRET=your_secret_key
+PORT=8080
+```
 
-### Связь с `common-lib`
+### 2. Загрузка зависимостей
+```bash
+go mod download
+go get github.com/yousefggg/common-lib@main
+go mod tidy
+```
 
-В проекте активно используется модуль common-lib
-Установка через команду `go get github.com/yousefggg/common-lib@main`
+### 3. Запуск сервиса
+```bash
+go run cmd/main.go
+```
 
-естирование
+---
+
+## 🛣 API Эндпоинты
+
+
+| Метод | Путь | Описание | Доступ |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/register` | Регистрация нового пользователя | Public |
+| `POST` | `/auth/login` | Вход и получение JWT-токена | Public |
+
+---
+
+## 🧪 Тестирование
+
 Проект покрыт Unit-тестами с использованием моков.
 
-*Покрытие бизнес-логики (Usecase): ~89%
-*Покрытие хендлеров (Delivery): ~63%
+*   **Usecase:** ~89% покрытия
+*   **Delivery:** ~63% покрытия
 
-Запуск тестов `go test ./... -v -cover`
+Запуск всех тестов с отчетом о покрытии:
+```bash
+go test ./... -v -cover
+```
 
-## API Эндпоинты
+## 📄 Лицензия
 
+Данный проект распространяется под лицензией **MIT**.
 
-| Метод | Путь | Описание |
-| :--- | :--- | :--- |
-| POST | /auth/register | Регистрация (Email, Password, Role) |
-| POST | /auth/login | Вход и получение JWT-токена |
+## 👤 Контакты
 
-## Лицензия
-Данный проект распространяется под лицензией MIT. Вы можете свободно использовать его для своих целей.
-
-## Контакты
-Автор: Юсеф Муляев
-Email: mulaev2006@gmail.com
-GitHub: yousefggg
+*   **Автор:** Юсеф Муляев
+*   **Email:** [mulaev2006@gmail.com](mailto:mulaev2006@gmail.com)
+*   **GitHub:** [@yousefggg](https://github.com)
