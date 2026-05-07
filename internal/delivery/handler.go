@@ -3,17 +3,21 @@ package delivery
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/yousefggg/auth-service/internal/usecase"
+	"context"
 	"github.com/yousefggg/common-lib/pkg/errors"
 	"github.com/yousefggg/common-lib/pkg/logger"
 )
 
-type Handler struct {
-	authUseCase *usecase.AuthInteractor
+type AuthUseCase interface {
+	Register(ctx context.Context, email, password, role string) error
+	Login(ctx context.Context, email, password string) (string, error)
 }
 
-func NewHandler(authUseCase *usecase.AuthInteractor) *Handler {
+type Handler struct {
+	authUseCase AuthUseCase 
+}
+
+func NewHandler(authUseCase AuthUseCase) *Handler {
 	return &Handler{
 		authUseCase: authUseCase,
 	}
@@ -29,7 +33,17 @@ type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
-
+// Register godoc
+// @Summary      Регистрация
+// @Description  Создает нового пользователя в системе
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        input body      domain.User true "Данные пользователя (email, password, role)"
+// @Success      201  {object}  map[string]string "message: user created"
+// @Failure      400  {object}  map[string]string "error: invalid input"
+// @Failure      500  {object}  map[string]string "error: internal server error"
+// @Router       /auth/register [post]
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -46,7 +60,16 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
-
+// Login godoc
+// @Summary      Вход
+// @Description  Проверяет данные и возвращает JWT токен
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        input body      domain.User true "Данные для входа (email, password)"
+// @Success      200  {object}  map[string]string "token: JWT_TOKEN_HERE"
+// @Failure      401  {object}  map[string]string "error: unauthorized"
+// @Router       /auth/login [post]
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

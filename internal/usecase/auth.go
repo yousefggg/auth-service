@@ -1,26 +1,28 @@
 package usecase
 
 import (
-	"context"
-	"strings"
-
-	"github.com/yousefggg/auth-service/internal/domain"
-	"github.com/yousefggg/common-lib/pkg/errors"
-	"github.com/yousefggg/common-lib/pkg/jwt"
-	"github.com/yousefggg/common-lib/pkg/logger"
-	"golang.org/x/crypto/bcrypt"
+    "context"
+    "strings"
+    "github.com/google/uuid"
+    "github.com/yousefggg/auth-service/internal/domain"
+    "github.com/yousefggg/common-lib/pkg/errors"
+    "github.com/yousefggg/common-lib/pkg/logger"
+    "golang.org/x/crypto/bcrypt"
 )
 
+type TokenManager interface {
+    GenerateToken(userID uuid.UUID, role string) (string, error)
+}
 type AuthInteractor struct {
-	repo         domain.UserRepository
-	tokenManager *jwt.TokenManager
+    repo         domain.UserRepository
+    tokenManager TokenManager
 }
 
-func NewAuthInteractor(repo domain.UserRepository, tm *jwt.TokenManager) *AuthInteractor {
-	return &AuthInteractor{
-		repo:         repo,
-		tokenManager: tm,
-	}
+func NewAuthInteractor(repo domain.UserRepository, tm TokenManager) *AuthInteractor {
+    return &AuthInteractor{
+        repo:         repo,
+        tokenManager: tm,
+    }
 }
 
 func (a *AuthInteractor) Register(ctx context.Context, email, password, role string) error {

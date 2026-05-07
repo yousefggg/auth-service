@@ -14,8 +14,22 @@ import (
 	"github.com/yousefggg/auth-service/internal/usecase"
 	"github.com/yousefggg/common-lib/pkg/jwt"
 	"github.com/yousefggg/common-lib/pkg/logger"
-)
 
+	_ "github.com/yousefggg/auth-service/docs"
+    "github.com/swaggo/http-swagger"
+)
+// @title           Auth Service API
+// @version         1.0
+// @description     Микросервис для аутентификации пользователей (регистрация и логин).
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   Yousef Support
+// @contact.url    http://github.com/yousefggg
+
+// @host      localhost:8081
+// @BasePath  /
+// @accept    json
+// @produce   json
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
@@ -85,6 +99,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/register", handler.Register)
 	mux.HandleFunc("/auth/login", handler.Login)
+
+	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	wrappedMux := delivery.LoggingMiddleware(mux)
 
