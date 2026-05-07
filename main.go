@@ -2,22 +2,18 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/swaggo/http-swagger"
 	_ "github.com/yousefggg/auth-service/docs"
 	"github.com/yousefggg/auth-service/internal/delivery"
 	"github.com/yousefggg/auth-service/internal/repository/postgres"
 	"github.com/yousefggg/auth-service/internal/usecase"
+	"github.com/yousefggg/common-lib/pkg/database"
 	"github.com/yousefggg/common-lib/pkg/jwt"
 	"github.com/yousefggg/common-lib/pkg/logger"
 )
@@ -45,23 +41,18 @@ func main() {
 	logger.Info("Starting auth-service", "env", logLevel)
 
 	dsn := os.Getenv("DATABASE_URL")
-	runMigrations(dsn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dbPool, err := pgxpool.New(ctx, dsn)
+	dbPool, err := database.InitDB(ctx, dsn)
 	if err != nil {
-		logger.Error("Failed to create database pool", "error", err)
+		logger.Error("Failed to initialize database", "error", err)
 		os.Exit(1)
 	}
 	defer dbPool.Close()
 
-	if err := dbPool.Ping(ctx); err != nil {
-		logger.Error("Failed to ping database", "error", err)
-		os.Exit(1)
-	}
-	logger.Info("Successfully connected to database")
+	logger.Info("Successfully connected to database and applied migrations")
 
 	secret := os.Getenv("JWT_SECRET")
 	ttl, err := time.ParseDuration(os.Getenv("JWT_TTL"))
@@ -103,24 +94,5 @@ func main() {
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logger.Error("Server failed to start", "error", err)
 		os.Exit(1)
-	}
-}
-
-func runMigrations(dsn string) {
-	m, err := migrate.New("file://migrations", dsn)
-	if err != nil {
-		logger.Error("Could not create migrate instance", "error", err)
-		os.Exit(1)
-	}
-
-	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		logger.Error("Failed to apply migrations", "error", err)
-		os.Exit(1)
-	}
-
-	if errors.Is(err, migrate.ErrNoChange) {
-		logger.Info("No new migrations to apply")
-	} else {
-		logger.Info("Migrations applied successfully")
 	}
 }
