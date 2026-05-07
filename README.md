@@ -10,7 +10,7 @@
 *   **Language:** Go (Standard `net/http` для чистоты архитектуры)
 *   **Database:** PostgreSQL + `pgx`
 *   **Security:** `bcrypt` (хеширование), `golang-jwt` (токены)
-*   **Logging:** [common-lib](https://github.com)
+*   **Logging:** [common-lib](https://github.com/yousefggg/common-lib)
 *   **Testing:** `testify`, `mockery`
 
 ## 🏗 Архитектура
@@ -79,4 +79,4 @@ go test ./... -v -cover
 
 *   **Автор:** Юсеф Муляев
 *   **Email:** [mulaev2006@gmail.com](mailto:mulaev2006@gmail.com)
-*   **GitHub:** [@yousefggg](https://github.com)
+*   **GitHub:** [@yousefggg](https://github.com/yousefggg)
