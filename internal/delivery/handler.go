@@ -6,11 +6,13 @@ import (
 	"context"
 	"github.com/yousefggg/common-lib/pkg/errors"
 	"github.com/yousefggg/common-lib/pkg/logger"
+	"github.com/yousefggg/common-lib/pkg/dto"
 )
 
 type AuthUseCase interface {
 	Register(ctx context.Context, email, password, role string) error
 	Login(ctx context.Context, email, password string) (string, error)
+	ParseToken(token string) (*dto.Claims, error)
 }
 
 type Handler struct {
@@ -114,4 +116,21 @@ func (h *Handler) sendError(w http.ResponseWriter, err error) {
 	}
 
 	h.sendJSON(w, status, map[string]string{"message": "internal server error"})
+}
+func (h *Handler) Validate(w http.ResponseWriter, r *http.Request) {
+    token := r.URL.Query().Get("token")
+
+    claims, err := h.authUseCase.ParseToken(token)
+    if err != nil {
+        json.NewEncoder(w).Encode(dto.ValidateTokenResponse{Valid: false})
+        return
+    }
+    resp := dto.ValidateTokenResponse{
+        UserID: claims.UserID,
+        Role:   claims.Role,
+        Valid:  true,
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(resp)
 }

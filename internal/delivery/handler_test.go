@@ -17,17 +17,26 @@ func TestHandler_Register(t *testing.T) {
 	handler := NewHandler(mockUC)
 
 	t.Run("Success", func(t *testing.T) {
-		userInput := map[string]string{
-			"email":    "test@test.com",
-			"password": "password123",
-			"role":     "user",
+		bodyData := RegisterRequest{
+			Email:    "test@test.com",
+			Password: "password123",
+			Role:     "user",
 		}
-		body, _ := json.Marshal(userInput)
 
-		mockUC.On("Register", mock.Anything, "test@test.com", "password123", "user").
-			Return(nil).Once()
+		body, err := json.Marshal(bodyData)
+		assert.NoError(t, err)
 
-		req := httptest.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer(body))
+		mockUC.
+			On("Register",
+				mock.Anything,
+				bodyData.Email,
+				bodyData.Password,
+				bodyData.Role,
+			).
+			Return(nil).
+			Once()
+
+		req := httptest.NewRequest(http.MethodPost, "/auth/register", bytes.NewReader(body))
 		rec := httptest.NewRecorder()
 
 		handler.Register(rec, req)
@@ -37,7 +46,12 @@ func TestHandler_Register(t *testing.T) {
 	})
 
 	t.Run("Invalid_JSON", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer([]byte("invalid")))
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/auth/register",
+			bytes.NewBuffer([]byte("{invalid-json}")),
+		)
+
 		rec := httptest.NewRecorder()
 
 		handler.Register(rec, req)

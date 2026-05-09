@@ -22,10 +22,8 @@ func TestAuthInteractor_Register(t *testing.T) {
 		password := "password123"
 		role := domain.RoleUser
 
-		// 1. Сначала Interactor проверяет, существует ли пользователь
-		repo.On("GetByEmail", mock.Anything, email).Return(nil, nil).Once()
+		repo.On("GetByEmail", mock.Anything, email).Return(nil, assert.AnError).Once()
 
-		// 2. Затем создает пользователя (проверяем, что пароль захеширован)
 		repo.On("Create", mock.Anything, mock.MatchedBy(func(u *domain.User) bool {
 			return u.Email == email && u.PasswordHash != password
 		})).Return(nil).Once()
@@ -35,18 +33,16 @@ func TestAuthInteractor_Register(t *testing.T) {
 		assert.NoError(t, err)
 		repo.AssertExpectations(t)
 	})
-	t.Run("Invalid_Input", func(t *testing.T) {
-    // Тест на плохой email
-    err := interactor.Register(context.Background(), "bad", "12345678", domain.RoleUser)
-    assert.Error(t, err)
-    
-    // Тест на короткий пароль
-    err = interactor.Register(context.Background(), "test@test.com", "123", domain.RoleUser)
-    assert.Error(t, err)
 
-    // Тест на несуществующую роль
-    err = interactor.Register(context.Background(), "test@test.com", "12345678", "superman")
-    assert.Error(t, err)
+	t.Run("Invalid_Input", func(t *testing.T) {
+		err := interactor.Register(context.Background(), "bad", "12345678", domain.RoleUser)
+		assert.Error(t, err)
+
+		err = interactor.Register(context.Background(), "test@test.com", "123", domain.RoleUser)
+		assert.Error(t, err)
+
+		err = interactor.Register(context.Background(), "test@test.com", "12345678", "superman")
+		assert.Error(t, err)
 	})
 
 	t.Run("User_Exists", func(t *testing.T) {
@@ -71,9 +67,9 @@ func TestAuthInteractor_Login(t *testing.T) {
 		email := "login@test.com"
 		password := "correct_pass"
 		userID := uuid.New()
-		
+
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		
+
 		existingUser := &domain.User{
 			ID:           userID,
 			Email:        email,
@@ -81,9 +77,10 @@ func TestAuthInteractor_Login(t *testing.T) {
 			Role:         "admin",
 		}
 
-		// Вызываем GetByEmail и GenerateToken (имена из твоего кода)
 		repo.On("GetByEmail", mock.Anything, email).Return(existingUser, nil).Once()
-		tm.On("GenerateToken", userID, "admin").Return("valid_token", nil).Once()
+
+		tm.On("GenerateToken", userID, "admin").
+			Return("valid_token", nil).Once()
 
 		token, err := interactor.Login(context.Background(), email, password)
 
@@ -100,33 +97,44 @@ func TestAuthInteractor_Login(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, token)
 	})
+
 	t.Run("Wrong_Password", func(t *testing.T) {
-    email := "pass@test.com"
-    // Создаем хеш для ОДНОГО пароля
-    wrongHash, _ := bcrypt.GenerateFromPassword([]byte("real_password"), bcrypt.DefaultCost)
-    user := &domain.User{Email: email, PasswordHash: string(wrongHash)}
+		email := "pass@test.com"
 
-    repo.On("GetByEmail", mock.Anything, email).Return(user, nil).Once()
+		wrongHash, _ := bcrypt.GenerateFromPassword([]byte("real_password"), bcrypt.DefaultCost)
+		user := &domain.User{
+			Email:        email,
+			PasswordHash: string(wrongHash),
+		}
 
-    // Пытаемся войти с ДРУГИМ паролем
-    token, err := interactor.Login(context.Background(), email, "wrong_password")
-    
-    assert.Error(t, err)
-    assert.Empty(t, token)
+		repo.On("GetByEmail", mock.Anything, email).Return(user, nil).Once()
+
+		token, err := interactor.Login(context.Background(), email, "wrong_password")
+
+		assert.Error(t, err)
+		assert.Empty(t, token)
 	})
 
 	t.Run("Token_Generation_Fail", func(t *testing.T) {
 		email := "jwt@test.com"
 		userID := uuid.New()
+
 		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
-		user := &domain.User{ID: userID, Email: email, PasswordHash: string(hash), Role: "user"}
+
+		user := &domain.User{
+			ID:           userID,
+			Email:        email,
+			PasswordHash: string(hash),
+			Role:         "user",
+		}
 
 		repo.On("GetByEmail", mock.Anything, email).Return(user, nil).Once()
-		// Имитируем поломку генератора токенов
-		tm.On("GenerateToken", userID, "user").Return("", assert.AnError).Once()
+
+		tm.On("GenerateToken", userID, "user").
+			Return("", assert.AnError).Once()
 
 		token, err := interactor.Login(context.Background(), email, "password123")
-		
+
 		assert.Error(t, err)
 		assert.Empty(t, token)
 	})

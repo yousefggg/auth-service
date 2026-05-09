@@ -7,11 +7,12 @@ import (
     "github.com/yousefggg/auth-service/internal/domain"
     "github.com/yousefggg/common-lib/pkg/errors"
     "github.com/yousefggg/common-lib/pkg/logger"
+	"github.com/yousefggg/common-lib/pkg/dto"
     "golang.org/x/crypto/bcrypt"
 )
-
 type TokenManager interface {
     GenerateToken(userID uuid.UUID, role string) (string, error)
+    ValidateToken(token string) (uuid.UUID, string, error)
 }
 type AuthInteractor struct {
     repo         domain.UserRepository
@@ -88,4 +89,16 @@ func (a *AuthInteractor) Login(ctx context.Context, email, password string) (str
 
 	logger.Info("User logged in successfully", "user_id", user.ID, "email", email)
 	return token, nil
+}
+func (i *AuthInteractor) ParseToken(token string) (*dto.Claims, error) {
+    userID, role, err := i.tokenManager.ValidateToken(token)
+    if err != nil {
+        logger.Error("token validation failed", "error", err)
+        return nil, errors.NewErr("AUTH_FAILED", "invalid or expired token", err)
+    }
+
+    return &dto.Claims{
+        UserID: userID,
+        Role:   role,
+    }, nil
 }

@@ -7,13 +7,12 @@ replace github.com/yousefggg/common-lib => ../common-lib
 require github.com/joho/godotenv v1.5.1
 
 require (
-	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
-	github.com/yousefggg/common-lib v0.0.0-20260507175800-128dfa587472
+	github.com/yousefggg/common-lib v0.0.0-20260509064503-59bad2e63f95
 	golang.org/x/crypto v0.50.0
 )
 
@@ -25,6 +24,7 @@ require (
 	github.com/go-openapi/spec v0.20.6 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+	github.com/golang-migrate/migrate/v4 v4.19.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect

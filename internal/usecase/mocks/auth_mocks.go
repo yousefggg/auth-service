@@ -10,6 +10,7 @@ import (
 type UserRepository struct {
 	mock.Mock
 }
+
 func (m *UserRepository) Create(ctx context.Context, user *domain.User) error {
 	args := m.Called(ctx, user)
 	return args.Error(0)
@@ -28,11 +29,17 @@ type TokenManager struct {
 }
 
 func (m *TokenManager) GenerateToken(userID uuid.UUID, role string) (string, error) {
-    args := m.Called(userID, role)
-    return args.String(0), args.Error(1)
+	args := m.Called(userID, role)
+	return args.String(0), args.Error(1)
 }
 
-func (m *TokenManager) Parse(accessToken string) (string, string, error) {
-	args := m.Called(accessToken)
-	return args.String(0), args.String(1), args.Error(2)
+func (m *TokenManager) ValidateToken(token string) (uuid.UUID, string, error) {
+	args := m.Called(token)
+
+	var userID uuid.UUID
+	if args.Get(0) != nil {
+		userID = args.Get(0).(uuid.UUID)
+	}
+
+	return userID, args.String(1), args.Error(2)
 }
